@@ -49,7 +49,7 @@ var (
 // String nicely prints a list of projects
 func (p ProjectSimpleList) String() string {
 	var s string
-	s += fmt.Sprintf("| %6s | %-20s | %-15s | %65s |\n", "ID", "Name", "Owner", "Self Link")
+	s += fmt.Sprintf("| %6s | %-20s | %-15s | %-65s |\n", "ID", "Name", "Owner", "Self Link")
 	for _, proj := range p.Embedded.Projects {
 		s += fmt.Sprintf("| %6s | %-20s | %-15s | %65s |\n", proj.ID, proj.Name, proj.Owner, proj.Links.Self.Href)
 	}
