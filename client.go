@@ -3,6 +3,7 @@ package rex
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"fmt"
 	"golang.org/x/oauth2"
 	"io"
 	"io/ioutil"
@@ -14,6 +15,7 @@ import (
 type Client struct {
 	ClientID     string
 	ClientSecret string
+	User         *User // stores the current user
 
 	httpClient *http.Client
 	token      oauth2.Token
@@ -23,7 +25,7 @@ var (
 	apiAuth = "/oauth/token"
 )
 
-func (c *Client) fetchToken() {
+func (c *Client) fetchToken() error {
 
 	req, _ := http.NewRequest("POST", RexBaseURL+apiAuth, strings.NewReader("grant_type=client_credentials"))
 
@@ -35,7 +37,7 @@ func (c *Client) fetchToken() {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer func() {
 		io.Copy(ioutil.Discard, resp.Body)
@@ -43,20 +45,23 @@ func (c *Client) fetchToken() {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if resp.StatusCode != 200 {
-		panic(resp.Status)
+		return fmt.Errorf("Server did not respond properly")
 	}
 
-	err = json.Unmarshal(body, &c.token)
-	if err != nil {
-		panic(err)
-	}
+	return json.Unmarshal(body, &c.token)
 }
 
 // NewClient creates a new client instance and authenticates the user with the given credentials
-func NewClient(clientID string, clientSecret string, httpClient *http.Client) *Client {
+//
+// This call also fetches the user information, so that the API user already has the User information
+// in the pocket. E.g. the self link is required for performing sub-sequent operations. This can be
+// retrieved by
+//     User.SelfLink.
+//
+func NewClient(clientID string, clientSecret string, httpClient *http.Client) (*Client, error) {
 
 	if httpClient == nil {
 		httpClient = http.DefaultClient
@@ -66,6 +71,11 @@ func NewClient(clientID string, clientSecret string, httpClient *http.Client) *C
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 	}
-	c.fetchToken()
-	return c
+	err := c.fetchToken()
+	if err != nil {
+		return nil, err
+	}
+
+	c.User, err = GetCurrentUser(c)
+	return c, err
 }

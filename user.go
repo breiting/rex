@@ -17,12 +17,13 @@ import (
 // used to directly access the data, but is also often requred
 // for other operations (e.g. insert a project)
 type User struct {
-	UserID    string   `json:"userId"`
-	Username  string   `json:"username,omitempty"`
-	Email     string   `json:"email,omitempty"`
-	FirstName string   `json:"firstName,omitempty"`
-	LastName  string   `json:"lastName,omitempty"`
-	LastLogin string   `json:"lastLogin,omitempty"`
+	UserID    string `json:"userId"`
+	Username  string `json:"username,omitempty"`
+	Email     string `json:"email,omitempty"`
+	FirstName string `json:"firstName,omitempty"`
+	LastName  string `json:"lastName,omitempty"`
+	LastLogin string `json:"lastLogin,omitempty"`
+	SelfLink  string
 	Roles     []string `json:"roles,omitempty"`
 	Links     struct {
 		User struct {
@@ -46,7 +47,7 @@ func (u User) String() string {
 	s += fmt.Sprintf("| Lastname  | %-65s |\n", u.LastName)
 	s += fmt.Sprintf("| Email     | %-65s |\n", u.Email)
 	s += fmt.Sprintf("| LastLogin | %-65s |\n", u.LastLogin)
-	s += fmt.Sprintf("| Link      | %-65s |\n", u.Links.User.Href)
+	s += fmt.Sprintf("| Self      | %-65s |\n", u.SelfLink)
 
 	return s
 }
@@ -73,6 +74,7 @@ func GetCurrentUser(c *Client) (*User, error) {
 
 	var u User
 	err = json.Unmarshal(body, &u)
+	u.SelfLink = u.Links.User.Href // assign self link
 	return &u, err
 }
 
