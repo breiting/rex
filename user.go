@@ -1,3 +1,5 @@
+// Copyright 2018 Bernhard Reitinger. All rights reserved.
+
 package rex
 
 import (
@@ -10,12 +12,12 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// User is the basic structure for a REX user
+// User stores information of the current user.
 //
 // The user can either contain the currentUser information,
-// but also information from a user query. The self link can be
-// used to directly access the data, but is also often requred
-// for other operations (e.g. insert a project)
+// but also information from a user query. The SelfLink can be
+// used to directly access the data, but is also often required
+// for other operations (e.g. insert a project).
 type User struct {
 	UserID    string `json:"userId"`
 	Username  string `json:"username,omitempty"`
@@ -39,7 +41,7 @@ var (
 	apiFindByID    = "/api/v2/users/search/findByUserId?userId="
 )
 
-// String nicely prints out the user information
+// String nicely prints out the user information.
 func (u User) String() string {
 	s := fmt.Sprintf("| UserId    | %-65s |\n", u.UserID)
 	s += fmt.Sprintf("| Username  | %-65s |\n", u.Username)
@@ -52,9 +54,10 @@ func (u User) String() string {
 	return s
 }
 
-// GetCurrentUser gets the user details of the current user
+// GetCurrentUser gets the user details of the current user.
 //
 // The current user is the one which has been identified by the authentication token.
+// When a new client is created by NewClient, this function will already be called implicitly.
 func GetCurrentUser(c *Client) (*User, error) {
 	req, _ := http.NewRequest("GET", RexBaseURL+apiCurrentUser, nil)
 	c.token.SetAuthHeader(req)
@@ -78,9 +81,9 @@ func GetCurrentUser(c *Client) (*User, error) {
 	return &u, err
 }
 
-// GetTotalNumberOfUsers returns the number of registered users
+// GetTotalNumberOfUsers returns the number of registered users.
 //
-// Requires admin permissions
+// Requires admin permissions!
 func GetTotalNumberOfUsers(c *Client) (uint64, error) {
 	req, _ := http.NewRequest("GET", RexBaseURL+apiUsers, nil)
 	c.token.SetAuthHeader(req)
@@ -101,7 +104,7 @@ func GetTotalNumberOfUsers(c *Client) (uint64, error) {
 	return gjson.Get(string(body), "page.totalElements").Uint(), nil
 }
 
-// GetUserByEmail retrieves the user information based on the email address
+// GetUserByEmail retrieves the user information based on a given email address
 func GetUserByEmail(c *Client, email string) (*User, error) {
 
 	req, _ := http.NewRequest("GET", RexBaseURL+apiFindByEmail+email, nil)

@@ -1,3 +1,5 @@
+// Copyright 2018 Bernhard Reitinger. All rights reserved.
+
 package rex
 
 import (
@@ -11,7 +13,12 @@ import (
 	"strings"
 )
 
-// Client is the main client for accessing the REX API
+// Client stores all user relevant information. The client is used to
+// get an authentication token, but it also stores the user information
+// such as username, email, and some more.
+//
+// To create a new client you simply use the following code
+//     client,err := NewClient("<ClientId>", "<ClientSecret>", nil)
 type Client struct {
 	ClientID     string
 	ClientSecret string
@@ -56,11 +63,8 @@ func (c *Client) fetchToken() error {
 
 // NewClient creates a new client instance and authenticates the user with the given credentials
 //
-// This call also fetches the user information, so that the API user already has the User information
-// in the pocket. E.g. the self link is required for performing sub-sequent operations. This can be
-// retrieved by
-//     User.SelfLink.
-//
+// This call also fetches the user information, so that the API user already has the user information
+// in the pocket. E.g. the self link is required for performing sub-sequent operations.
 func NewClient(clientID string, clientSecret string, httpClient *http.Client) (*Client, error) {
 
 	if httpClient == nil {

@@ -1,3 +1,5 @@
+// Copyright 2018 Bernhard Reitinger. All rights reserved.
+
 package rex
 
 import (
@@ -13,17 +15,16 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// Reference is currently a simple struct which only contains the key
+// Reference is a spatial anchor which can be attached to a project or a project file.
 //
-// However the Reference (RexReference) will be used to permanently attach location information to any project or
-// project item
+// Currently this feature is not yet implemented fully.
 type Reference struct {
 	Key string `json:"key"`
 }
 
 // ProjectSimple is the basic structure representing a simple RexProject
 type ProjectSimple struct {
-	ID    string // only set by the client for convenience
+	ID    string // auto-generated after getting the list of projects
 	Name  string `json:"name"`
 	Owner string `json:"owner"`
 	Links struct {
@@ -33,7 +34,9 @@ type ProjectSimple struct {
 	} `json:"_links"`
 }
 
-// ProjectSimpleList is a list of projects
+// ProjectSimpleList is a list ProjectSimple objects.
+//
+// Mainly required for JSON encoding/decoding
 type ProjectSimpleList struct {
 	Embedded struct {
 		Projects []ProjectSimple `json:"projects"`
@@ -46,7 +49,7 @@ var (
 	apiProjectFiles   = "/api/v2/projectFiles/"
 )
 
-// String nicely prints a list of projects
+// String nicely prints a list of projects.
 func (p ProjectSimpleList) String() string {
 	var s string
 	s += fmt.Sprintf("| %6s | %-20s | %-15s | %-65s |\n", "ID", "Name", "Owner", "Self Link")
@@ -56,7 +59,10 @@ func (p ProjectSimpleList) String() string {
 	return s
 }
 
-// GetProjects gets all projects for the user current user
+// GetProjects gets all projects for the current user.
+//
+// This call only fetches the project list, but not the content of every project.
+// Please use GetProject for getting the detailed project information.
 func GetProjects(c *Client) (*ProjectSimpleList, error) {
 	req, _ := http.NewRequest("GET", RexBaseURL+apiProjectByOwner+c.User.UserID, nil)
 	c.token.SetAuthHeader(req)
@@ -83,7 +89,9 @@ func GetProjects(c *Client) (*ProjectSimpleList, error) {
 	return &projects, err
 }
 
-// CreateProject creates a new project for the current user
+// CreateProject creates a new project for the current user.
+//
+// The name is used as project name
 func CreateProject(c *Client, name string) error {
 	p := ProjectSimple{Name: name, Owner: c.User.UserID}
 
@@ -109,8 +117,12 @@ func CreateProject(c *Client, name string) error {
 	return nil
 }
 
-// UploadProjectFiles uploads a list of local files to a given project
-func UploadProjectFiles(c *Client, projectID string, name string, fileName string, r io.Reader) error {
+// UploadProjectFile uploads a new project file.
+//
+// The project is identified by the projectID (e.g. 1020). The file requires a name,
+// which is displayed, but also a fileName which includes the suffix. The fileName is used
+// for detecting the mimetype. The content of the file will be read from the io.Reader r.
+func UploadProjectFile(c *Client, projectID string, name string, fileName string, r io.Reader) error {
 
 	projectFile := struct {
 		Name    string `json:"name"`

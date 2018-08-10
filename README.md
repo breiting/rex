@@ -19,3 +19,8 @@ Once you activated your account, you can simply create an API access token with 
 This that information in your pocket, you can start building your REX-enabled application.
 An example application is called [rx](https://github.com/breiting/rx) which is a command line tool accessing the REX
 system.
+
+## Application using rex
+
+There is a command line CLI tool called [rx](https://github.com/breiting/rx) which uses this library. Please have a look
+and fork the project.
