@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
 )
 
@@ -45,6 +46,7 @@ type ProjectSimpleList struct {
 
 var (
 	apiProjects       = "/api/v2/projects"
+	apiRexReferences  = "/api/v2/rexReferences"
 	apiProjectByOwner = "/api/v2/projects/search/findAllByOwner?owner="
 	apiProjectFiles   = "/api/v2/projectFiles/"
 )
@@ -99,21 +101,53 @@ func CreateProject(c *Client, name string) error {
 	json.NewEncoder(b).Encode(p)
 
 	req, _ := http.NewRequest("POST", RexBaseURL+apiProjects, b)
+	req.Header.Add("accept", "application/json")
 	c.token.SetAuthHeader(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		io.Copy(ioutil.Discard, resp.Body)
-	}()
-
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	if resp.StatusCode != 201 {
 		return fmt.Errorf("Got server status %d with error: %s ", resp.StatusCode, body)
 	}
+	io.Copy(ioutil.Discard, resp.Body)
+
+	fmt.Println(string(body))
+	projectSelfLink := gjson.Get(string(body), "_links.self.href").String()
+	uuid := uuid.New().String()
+
+	// Create a RexReference as well
+	rexReference := struct {
+		Project       string `json:"project"`
+		RootReference bool   `json:"rootReference"`
+		Key           string `json:"key"`
+	}{
+		Project:       projectSelfLink,
+		RootReference: true,
+		Key:           uuid,
+	}
+
+	json.NewEncoder(b).Encode(rexReference)
+
+	req, _ = http.NewRequest("POST", RexBaseURL+apiRexReferences, b)
+	req.Header.Add("accept", "application/json")
+	c.token.SetAuthHeader(req)
+
+	resp, err = c.httpClient.Do(req)
+	defer func() {
+		io.Copy(ioutil.Discard, resp.Body)
+	}()
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 201 {
+		return fmt.Errorf("Got server status %d with error: %s ", resp.StatusCode, body)
+	}
+
 	return nil
 }
 
