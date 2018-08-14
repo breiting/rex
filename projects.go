@@ -44,6 +44,32 @@ type ProjectSimpleList struct {
 	} `json:"_embedded"`
 }
 
+// ProjectAddress defines the address information for a project
+type ProjectAddress struct {
+	AddressLine1 string `json:"addressLine1"`
+	AddressLine2 string `json:"addressLine2"`
+	AddressLine3 string `json:"addressLine3"`
+	AddressLine4 string `json:"addressLine4"`
+	PostCode     string `json:"postcode"`
+	City         string `json:"city"`
+	Region       string `json:"region"`
+	Country      string `json:"country"`
+}
+
+// ProjectTransformation is used for the absoluteTransformation as well as for the relativeTransformation
+// of a RexReference
+type ProjectTransformation struct {
+	Rotation struct {
+		X float64 `json:"x"`
+		Y float64 `json:"y"`
+		Z float64 `json:"z"`
+	} `json:"rotation"`
+	Position struct {
+		Type        string    `json:"type"`
+		Coordinates []float64 `json:"coordinates"`
+	} `json:"position"`
+}
+
 var (
 	apiProjects       = "/api/v2/projects"
 	apiRexReferences  = "/api/v2/rexReferences"
@@ -94,7 +120,7 @@ func GetProjects(c *Client) (*ProjectSimpleList, error) {
 // CreateProject creates a new project for the current user.
 //
 // The name is used as project name
-func CreateProject(c *Client, name string) error {
+func CreateProject(c *Client, name string, address *ProjectAddress, absoluteTransformation *ProjectTransformation) error {
 	p := ProjectSimple{Name: name, Owner: c.User.UserID}
 
 	b := new(bytes.Buffer)
@@ -115,19 +141,22 @@ func CreateProject(c *Client, name string) error {
 	}
 	io.Copy(ioutil.Discard, resp.Body)
 
-	fmt.Println(string(body))
 	projectSelfLink := gjson.Get(string(body), "_links.self.href").String()
 	uuid := uuid.New().String()
 
 	// Create a RexReference as well
 	rexReference := struct {
-		Project       string `json:"project"`
-		RootReference bool   `json:"rootReference"`
-		Key           string `json:"key"`
+		Project                string                 `json:"project"`
+		RootReference          bool                   `json:"rootReference"`
+		Key                    string                 `json:"key"`
+		Address                *ProjectAddress        `json:"address"`
+		AbsoluteTransformation *ProjectTransformation `json:"absoluteTransformation"`
 	}{
-		Project:       projectSelfLink,
-		RootReference: true,
-		Key:           uuid,
+		Project:                projectSelfLink,
+		RootReference:          true,
+		Key:                    uuid,
+		Address:                address,
+		AbsoluteTransformation: absoluteTransformation,
 	}
 
 	json.NewEncoder(b).Encode(rexReference)
