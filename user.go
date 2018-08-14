@@ -43,13 +43,15 @@ var (
 
 // String nicely prints out the user information.
 func (u User) String() string {
-	s := fmt.Sprintf("| UserId    | %-65s |\n", u.UserID)
+	s := fmt.Sprintf("|-------------------------------------------------------------------------------|\n")
+	s += fmt.Sprintf("| UserId    | %-65s |\n", u.UserID)
 	s += fmt.Sprintf("| Username  | %-65s |\n", u.Username)
 	s += fmt.Sprintf("| Firstname | %-65s |\n", u.FirstName)
 	s += fmt.Sprintf("| Lastname  | %-65s |\n", u.LastName)
 	s += fmt.Sprintf("| Email     | %-65s |\n", u.Email)
 	s += fmt.Sprintf("| LastLogin | %-65s |\n", u.LastLogin)
 	s += fmt.Sprintf("| Self      | %-65s |\n", u.SelfLink)
+	s += fmt.Sprintf("|-------------------------------------------------------------------------------|\n")
 
 	return s
 }
