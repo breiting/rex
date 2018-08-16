@@ -91,11 +91,10 @@ func (p ProjectSimpleList) String() string {
 //
 // This call only fetches the project list, but not the content of every project.
 // Please use GetProject for getting the detailed project information.
-func GetProjects(c *Client) (*ProjectSimpleList, error) {
-	req, _ := http.NewRequest("GET", RexBaseURL+apiProjectByOwner+c.User.UserID, nil)
-	c.token.SetAuthHeader(req)
+func GetProjects(e Executor, userID string) (*ProjectSimpleList, error) {
+	req, _ := http.NewRequest("GET", RexBaseURL+apiProjectByOwner+userID, nil)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := e.Execute(req)
 	if err != nil {
 		return nil, err
 	}
@@ -120,17 +119,16 @@ func GetProjects(c *Client) (*ProjectSimpleList, error) {
 // CreateProject creates a new project for the current user.
 //
 // The name is used as project name
-func CreateProject(c *Client, name string, address *ProjectAddress, absoluteTransformation *ProjectTransformation) error {
-	p := ProjectSimple{Name: name, Owner: c.User.UserID}
+func CreateProject(e Executor, userID, name string, address *ProjectAddress, absoluteTransformation *ProjectTransformation) error {
+	p := ProjectSimple{Name: name, Owner: userID}
 
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(p)
 
 	req, _ := http.NewRequest("POST", RexBaseURL+apiProjects, b)
 	req.Header.Add("accept", "application/json")
-	c.token.SetAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := e.Execute(req)
 	if err != nil {
 		return err
 	}
@@ -163,9 +161,8 @@ func CreateProject(c *Client, name string, address *ProjectAddress, absoluteTran
 
 	req, _ = http.NewRequest("POST", RexBaseURL+apiRexReferences, b)
 	req.Header.Add("accept", "application/json")
-	c.token.SetAuthHeader(req)
 
-	resp, err = c.httpClient.Do(req)
+	resp, err = e.Execute(req)
 	defer func() {
 		io.Copy(ioutil.Discard, resp.Body)
 	}()
@@ -185,7 +182,7 @@ func CreateProject(c *Client, name string, address *ProjectAddress, absoluteTran
 // The project is identified by the projectID (e.g. 1020). The file requires a name,
 // which is displayed, but also a fileName which includes the suffix. The fileName is used
 // for detecting the mimetype. The content of the file will be read from the io.Reader r.
-func UploadProjectFile(c *Client, projectID string, name string, fileName string, r io.Reader) error {
+func UploadProjectFile(e Executor, projectID string, name string, fileName string, r io.Reader) error {
 
 	projectFile := struct {
 		Name    string `json:"name"`
@@ -200,10 +197,8 @@ func UploadProjectFile(c *Client, projectID string, name string, fileName string
 	json.NewEncoder(b).Encode(projectFile)
 
 	req, _ := http.NewRequest("POST", RexBaseURL+apiProjectFiles, b)
-	req.Header.Add("accept", "application/json")
-	c.token.SetAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := e.Execute(req)
 	if err != nil {
 		return err
 	}
@@ -218,10 +213,10 @@ func UploadProjectFile(c *Client, projectID string, name string, fileName string
 	// Upload the actual payload
 	uploadURL := gjson.Get(string(body), "_links.file\\.upload.href").String()
 	io.Copy(ioutil.Discard, resp.Body)
-	return uploadFileContent(c, uploadURL, fileName, r)
+	return uploadFileContent(e, uploadURL, fileName, r)
 }
 
-func uploadFileContent(c *Client, uploadURL string, fileName string, r io.Reader) error {
+func uploadFileContent(e Executor, uploadURL string, fileName string, r io.Reader) error {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -230,10 +225,9 @@ func uploadFileContent(c *Client, uploadURL string, fileName string, r io.Reader
 	writer.Close()
 
 	req, _ := http.NewRequest("POST", uploadURL, body)
-	c.token.SetAuthHeader(req)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := e.Execute(req)
 	io.Copy(ioutil.Discard, resp.Body)
 	return err
 }
@@ -242,7 +236,7 @@ func uploadFileContent(c *Client, uploadURL string, fileName string, r io.Reader
 func updateProjectFile(c *Client) {
 	var body = []byte(`{"type": "rex"}`)
 	req, _ := http.NewRequest("PATCH", RexBaseURL+"/api/v2/projectFiles/1044", bytes.NewBuffer(body))
-	c.token.SetAuthHeader(req)
+	c.Token.SetAuthHeader(req)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

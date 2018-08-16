@@ -178,11 +178,10 @@ func min(a, b int) int {
 }
 
 // GetProject retrieves the full project specified by the projectID (e.g. 1020)
-func GetProject(c *Client, projectID string) (*Project, error) {
+func GetProject(e Executor, projectID string) (*Project, error) {
 	req, _ := http.NewRequest("GET", RexBaseURL+apiProject+projectID, nil)
-	c.token.SetAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := e.Execute(req)
 	if err != nil {
 		return nil, err
 	}
@@ -200,14 +199,13 @@ func GetProject(c *Client, projectID string) (*Project, error) {
 //
 // The file name is anticipated by the provided information from the server
 // using the content-disposition
-func DownloadFile(c *Client, link string) error {
+func DownloadFile(e Executor, link string) error {
 	req, _ := http.NewRequest("GET", link, nil)
-	c.token.SetAuthHeader(req)
 
 	// Set content disposition in order to get information about the filename
 	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 
-	response, err := c.httpClient.Do(req)
+	response, err := e.Execute(req)
 	if err != nil {
 		return err
 	}

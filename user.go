@@ -60,11 +60,10 @@ func (u User) String() string {
 //
 // The current user is the one which has been identified by the authentication token.
 // When a new client is created by NewClient, this function will already be called implicitly.
-func GetCurrentUser(c *Client) (*User, error) {
+func GetCurrentUser(e Executor) (*User, error) {
 	req, _ := http.NewRequest("GET", RexBaseURL+apiCurrentUser, nil)
-	c.token.SetAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := e.Execute(req)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +85,10 @@ func GetCurrentUser(c *Client) (*User, error) {
 // GetTotalNumberOfUsers returns the number of registered users.
 //
 // Requires admin permissions!
-func GetTotalNumberOfUsers(c *Client) (uint64, error) {
+func GetTotalNumberOfUsers(e Executor) (uint64, error) {
 	req, _ := http.NewRequest("GET", RexBaseURL+apiUsers, nil)
-	c.token.SetAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := e.Execute(req)
 	if err != nil {
 		return 0, err
 	}
@@ -107,12 +105,11 @@ func GetTotalNumberOfUsers(c *Client) (uint64, error) {
 }
 
 // GetUserByEmail retrieves the user information based on a given email address
-func GetUserByEmail(c *Client, email string) (*User, error) {
+func GetUserByEmail(e Executor, email string) (*User, error) {
 
 	req, _ := http.NewRequest("GET", RexBaseURL+apiFindByEmail+email, nil)
-	c.token.SetAuthHeader(req)
 
-	r, err := c.httpClient.Do(req)
+	r, err := e.Execute(req)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +125,7 @@ func GetUserByEmail(c *Client, email string) (*User, error) {
 
 	// Fetch actual user information based on the retrieved UserID
 	req, _ = http.NewRequest("GET", RexBaseURL+apiFindByID+user.UserID, nil)
-	c.token.SetAuthHeader(req)
-	r, err = c.httpClient.Do(req)
+	r, err = e.Execute(req)
 	if err != nil {
 		return nil, err
 	}
