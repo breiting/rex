@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"regexp"
 
 	"github.com/google/uuid"
@@ -242,10 +243,15 @@ func UploadProjectFile(e Executor, projectID string, name string, fileName strin
 		Name         string `json:"name"`
 		Project      string `json:"project"`
 		RexReference string `json:"rexReference"`
+		Type         string `json:"type,omitempty"`
 	}{
 		Name:         name,
 		Project:      RexBaseURL + apiProjects + "/" + projectID,
 		RexReference: selfLink,
+	}
+
+	if filepath.Ext(fileName) == ".rex" {
+		projectFile.Type = "rex"
 	}
 
 	// Create project file
